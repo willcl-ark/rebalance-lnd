@@ -41,7 +41,7 @@ class Logic:
             debug("Trying route #%d" % len(tried_routes))
             debug(Routes.print_route(route))
 
-            response = self.lnd.send_to_route_sync(payment_request=payment_request, routes=[route])
+            response = self.lnd.send_to_route_sync(payment_hash_string=payment_request.payment_hash, routes=[route])
             is_successful = response.payment_error == ""
 
             if is_successful:
@@ -98,3 +98,4 @@ class Logic:
         for channel in self.lnd.list_channels(active_only=True):
             if channel.chan_id == channel_id:
                 return channel
+

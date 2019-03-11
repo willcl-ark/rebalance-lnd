@@ -204,17 +204,17 @@ def get_columns():
         return 80
 
 
-lnd = Lnd(lnd_dir='/Users/will/regtest/.lnd/',
-          network='regtest',
+#lnd = Lnd(lnd_dir='/Users/will/regtest/.lnd/',
+#          network='regtest',
+#          grpc_host='127.0.0.1',
+#          grpc_port='10009',
+#          macaroon_path='/Users/will/regtest/.lnd/data/chain/bitcoin/regtest/admin.macaroon')
+
+lnd = Lnd(lnd_dir='/home/will/.lnd/',
+          network='mainnet',
           grpc_host='127.0.0.1',
           grpc_port='10009',
-          macaroon_path='/Users/will/regtest/.lnd/data/chain/bitcoin/regtest/admin.macaroon')
-
-# lnd = Lnd(  # lnd_dir='/Users/will/regtest/.lnd/',
-#             # network='regtest',
-#           grpc_host='77.98.116.8',
-#           grpc_port='10009',
-#           # macaroon_path='/Users/will/regtest/.lnd/data/chain/bitcoin/regtest/admin.macaroon'
-#           )
+          macaroon_path='/home/will/.lnd/data/chain/bitcoin/mainnet/admin.macaroon'
+          )
 
 main()
