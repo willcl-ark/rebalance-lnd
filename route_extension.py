@@ -1,5 +1,5 @@
 import sys
-import rpc_pb2 as ln
+from lnd_grpc.protos import rpc_pb2 as ln
 
 
 def debug(message):
@@ -12,13 +12,14 @@ class RouteExtension:
         self.lnd = lnd
         self.rebalance_channel = rebalance_channel
         self.payment = payment
+        self.graph = None
 
     def add_rebalance_channel(self, route):
         hops = route.hops
         last_hop = hops[-1]
         amount_msat = int(last_hop.amt_to_forward_msat)
 
-        expiry_last_hop = self.lnd.get_current_height() + self.get_expiry_delta_last_hop()
+        expiry_last_hop = self.lnd.get_info().block_height + self.get_expiry_delta_last_hop()
         total_time_lock = expiry_last_hop
 
         self.update_amounts(hops)
@@ -53,7 +54,7 @@ class RouteExtension:
             amt_to_forward_msat=amount_msat,
             amt_to_forward=amount_msat // 1000,
             chan_id=channel.chan_id,
-            pub_key=self.lnd.get_own_pubkey(),
+            pub_key=self.lnd.get_info().identity_pubkey,
         )
         return new_hop
 
@@ -80,15 +81,30 @@ class RouteExtension:
         for hop in reversed(hops):
             hop.expiry = total_time_lock
 
-            policy = self.lnd.get_policy(hop_out_channel_id, hop.pub_key)
+            policy = self.get_policy(hop_out_channel_id, hop.pub_key)
 
             time_lock_delta = self.get_time_lock_delta(policy)
             total_time_lock += time_lock_delta
             hop_out_channel_id = hop.chan_id
         return total_time_lock
 
+    def get_graph(self):
+        if self.graph is None:
+            self.graph = self.lnd.describe_graph()
+        return self.graph
+
+    def get_policy(self, channel_id, source_pubkey):
+        # node1_policy contains the fee base and rate for payments from node1 to node2
+        for edge in self.get_graph().edges:
+            if edge.channel_id == channel_id:
+                if edge.node1_pub == source_pubkey:
+                    result = edge.node1_policy
+                else:
+                    result = edge.node2_policy
+                return result
+
     def get_fee_msat(self, amount_msat, channel_id, source_pubkey):
-        policy = self.lnd.get_policy(channel_id, source_pubkey)
+        policy = self.get_policy(channel_id, source_pubkey)
         fee_base_msat = self.get_fee_base_msat(policy)
         fee_rate_milli_msat = self.get_fee_rate_msat(policy)
         return fee_base_msat + fee_rate_milli_msat * amount_msat // 1000000

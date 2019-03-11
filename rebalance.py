@@ -5,7 +5,8 @@ import math
 import os
 import sys
 
-from lnd import Lnd
+# from .lnd import Lnd
+from lnd_grpc.lnd_grpc import Client as Lnd
 
 from logic import Logic
 
@@ -77,7 +78,7 @@ def get_amount(arguments, first_hop_channel_id, last_hop_channel):
 
 
 def get_channel_for_channel_id(channel_id):
-    for channel in lnd.get_channels():
+    for channel in lnd.list_channels(active_only=True):
         if channel.chan_id == channel_id:
             return channel
     return None
@@ -160,13 +161,13 @@ def get_rebalance_amount(channel):
 
 
 def get_incoming_rebalance_candidates(channel_ratio):
-    low_local = list(filter(lambda c: get_local_ratio(c) < channel_ratio, lnd.get_channels()))
+    low_local = list(filter(lambda c: get_local_ratio(c) < channel_ratio, lnd.list_channels(active_only=True)))
     low_local = list(filter(lambda c: get_rebalance_amount(c) > 0, low_local))
     return sorted(low_local, key=get_remote_surplus, reverse=False)
 
 
 def get_outgoing_rebalance_candidates(channel_ratio):
-    high_local = list(filter(lambda c: get_local_ratio(c) > 1 - channel_ratio, lnd.get_channels()))
+    high_local = list(filter(lambda c: get_local_ratio(c) > 1 - channel_ratio, lnd.list_channels(active_only=True)))
     high_local = list(filter(lambda c: get_rebalance_amount(c) > 0, high_local))
     return sorted(high_local, key=get_remote_surplus, reverse=True)
 
@@ -203,5 +204,17 @@ def get_columns():
         return 80
 
 
-lnd = Lnd()
+lnd = Lnd(lnd_dir='/Users/will/regtest/.lnd/',
+          network='regtest',
+          grpc_host='127.0.0.1',
+          grpc_port='10009',
+          macaroon_path='/Users/will/regtest/.lnd/data/chain/bitcoin/regtest/admin.macaroon')
+
+# lnd = Lnd(  # lnd_dir='/Users/will/regtest/.lnd/',
+#             # network='regtest',
+#           grpc_host='77.98.116.8',
+#           grpc_port='10009',
+#           # macaroon_path='/Users/will/regtest/.lnd/data/chain/bitcoin/regtest/admin.macaroon'
+#           )
+
 main()

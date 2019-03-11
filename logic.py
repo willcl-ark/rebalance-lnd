@@ -41,7 +41,7 @@ class Logic:
             debug("Trying route #%d" % len(tried_routes))
             debug(Routes.print_route(route))
 
-            response = self.lnd.send_payment(payment_request, [route])
+            response = self.lnd.send_to_route_sync(payment_request=payment_request, routes=[route])
             is_successful = response.payment_error == ""
 
             if is_successful:
@@ -91,9 +91,10 @@ class Logic:
 
     def generate_invoice(self):
         memo = "Rebalance of channel with ID %d" % self.last_hop_channel.chan_id
-        return self.lnd.generate_invoice(memo, self.amount)
+        inv = self.lnd.add_invoice(memo=memo, value=self.amount)
+        return self.lnd.decode_pay_req(pay_req=inv.payment_request)
 
     def get_channel_for_channel_id(self, channel_id):
-        for channel in self.lnd.get_channels():
+        for channel in self.lnd.list_channels(active_only=True):
             if channel.chan_id == channel_id:
                 return channel
