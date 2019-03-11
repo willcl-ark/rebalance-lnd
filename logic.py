@@ -41,7 +41,8 @@ class Logic:
             debug("Trying route #%d" % len(tried_routes))
             debug(Routes.print_route(route))
 
-            response = self.lnd.send_to_route_sync(payment_hash_string=payment_request.payment_hash, routes=[route])
+            response = self.lnd.send_to_route_sync(payment_hash_string=payment_request.payment_hash,
+                                                   routes=[route])
             is_successful = response.payment_error == ""
 
             if is_successful:
